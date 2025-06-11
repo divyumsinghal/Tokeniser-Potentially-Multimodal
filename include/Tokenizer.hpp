@@ -5,6 +5,4 @@
 #include <unordered_map>
 #include <vector>
 
-class Tokenizer
-{
-};
+class Tokenizer {};
