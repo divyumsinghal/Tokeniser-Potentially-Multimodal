@@ -30,9 +30,11 @@ for pair, freq in sorted(merge_rules.items(), key=lambda item: item[1], reverse=
 vocab_yaml = {" ".join(token): freq for token, freq in vocab.items()}
 merge_rules_yaml = {" ".join(pair): merged for pair, merged in merge_rules.items()}
 
+"""
 # Write to YAML files
 with open("vocab.yaml", "w") as f:
     yaml.dump({"vocab": vocab_yaml}, f, sort_keys=False)
 
 with open("merge_rules.yaml", "w") as f:
     yaml.dump({"merge_rules": merge_rules_yaml}, f, sort_keys=False)
+"""

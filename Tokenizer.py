@@ -25,6 +25,11 @@ class Tokenizer:
         for char in data:
             if char not in forbidden_set:
                 unique_charset[(char,)] += 1
+
+        unique_charset[(end_of_word,)] += 1  # Ensure end_of_word is included
+        unique_charset[(unknown_token,)] += 1
+        unique_charset[(space,)] += 1
+
         return unique_charset
 
     def build_initial_vocab(self, data: str) -> dict:
