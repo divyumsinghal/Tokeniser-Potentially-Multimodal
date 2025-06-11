@@ -11,9 +11,15 @@ for filename in os.listdir("data"):
         with open(os.path.join("data", filename), "r") as f:
             data += f.read()
 
-tokenizer = Tokenizer.Tokenizer()
 
-vocab, merge_rules = tokenizer.train_vocab(data, iter=100)
+tokenizer = Tokenizer.Tokenizer(100)
+
+# Train the tokenizer on the loaded data
+tokenizer.train_vocab(data)
+
+# Get the vocabulary and merge rules
+vocab = tokenizer.get_vocab()
+merge_rules = tokenizer.get_merge_rules()
 
 # print vocab in a pretty format, sorted by frequency
 print("Vocabulary:")

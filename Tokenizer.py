@@ -1,15 +1,23 @@
 from collections import defaultdict, OrderedDict
+from typing import Dict, Tuple, List, DefaultDict
 
 # Special Tokens
-end_of_word = "</w>"
-unknown_token = "<unk>"
-space = " "
-forbidden_set = {unknown_token, end_of_word, space}
+END_OF_WORD = "</w>"
+UNKNOWN_TOKEN = "<unk>"
+SPACE = " "
+FORBIDDEN_SET = {UNKNOWN_TOKEN, END_OF_WORD, SPACE}
+
+DEFAULT_ITERATIONS = 15
 
 
 class Tokenizer:
 
-    def get_unique_charset(self, data: str) -> dict:
+    def __init__(self, iterations: int = DEFAULT_ITERATIONS):
+        self.iterations = iterations
+        self.merge_rules: OrderedDict[Tuple[str, str], str] = OrderedDict()
+        self.vocab: Dict[Tuple[str, ...], int] = {}
+
+    def __get_unique_charset(self, data: str) -> Dict[Tuple[str, ...], int]:
         """
         Returns a dictionary of unique characters and their frequencies in the input string.
         This function counts the occurrences of each unique character in the input string, excluding forbidden tokens.
@@ -18,21 +26,21 @@ class Tokenizer:
             data: The input string from which to extract unique characters.
 
         Returns:
-            A dictionary where keys are tuples containing a single character and values are their frequencies.
+            A dictionary where keys are tuples containing a single character (as Tuple[str, ...]) and values are their frequencies.
         """
 
-        unique_charset = defaultdict(int)
+        unique_charset: DefaultDict[Tuple[str, ...], int] = defaultdict(int)
         for char in data:
-            if char not in forbidden_set:
+            if char not in FORBIDDEN_SET:
                 unique_charset[(char,)] += 1
 
-        unique_charset[(end_of_word,)] += 1  # Ensure end_of_word is included
-        unique_charset[(unknown_token,)] += 1
-        unique_charset[(space,)] += 1
+        # Ensure special tokens are present
+        for token in (END_OF_WORD, UNKNOWN_TOKEN, SPACE):
+            unique_charset[(token,)] += 1
 
         return unique_charset
 
-    def build_initial_vocab(self, data: str) -> dict:
+    def __build_initial_vocab(self, data: str) -> Dict[Tuple[str, ...], int]:
         """
         Builds the initial vocabulary from the input string by splitting words into character tokens.
         Each word is converted into a tuple of its characters with an end-of-word token appended.
@@ -44,18 +52,20 @@ class Tokenizer:
             A dictionary where keys are tuples of character tokens (including the end-of-word token) and values are their frequencies.
         """
 
-        vocab = defaultdict(int)
+        vocab = self.__get_unique_charset(data)
 
         words = data.strip().split()
 
         for word in words:
-            if word not in forbidden_set:
-                tokens = tuple(word) + (end_of_word,)
+            if word and word not in FORBIDDEN_SET:
+                tokens = tuple(word) + (END_OF_WORD,)
                 vocab[tokens] += 1
 
         return vocab
 
-    def make_pairwise_vocab(self, vocab: dict) -> list:
+    def __build_pairwise_vocab(
+        self, vocab: Dict[Tuple[str, ...], int]
+    ) -> List[Tuple[Tuple[str, str], int]]:
         """
         Generates a list of token pairs and their frequencies from the vocabulary.
         This function identifies all adjacent token pairs in the vocabulary and counts their occurrences.
@@ -76,7 +86,9 @@ class Tokenizer:
 
         return sorted(pairwise_vocab.items(), key=lambda item: item[1], reverse=True)
 
-    def replace_pairs_in_vocab(self, vocab: dict, pair_to_replace: tuple) -> dict:
+    def __replace_pairs_in_vocab(
+        self, vocab: Dict[Tuple[str, ...], int], pair_to_replace: Tuple[str, str]
+    ) -> Dict[Tuple[str, ...], int]:
         """
         Replaces all occurrences of a specified token pair in the vocabulary with a merged token.
         This function updates the vocabulary by merging the given pair wherever it appears in token sequences.
@@ -109,7 +121,7 @@ class Tokenizer:
 
         return new_vocab
 
-    def train_vocab(self, data: str, iter: int = 15) -> tuple[dict, dict]:
+    def train_vocab(self, data: str):
         """
         Trains a vocabulary by iteratively merging the most frequent token pairs in the input data.
         This function applies a specified number of merge operations to build a subword vocabulary.
@@ -122,17 +134,22 @@ class Tokenizer:
             A dictionary representing the trained vocabulary, where keys are tuples of tokens and values are their frequencies.
         """
 
-        vocab = self.build_initial_vocab(data)
-        merge_rules = OrderedDict()
+        self.vocab = self.__build_initial_vocab(data)
 
-        for _ in range(iter):
-            pairwise_vocab = self.make_pairwise_vocab(vocab)
+        for _ in range(self.iterations):
+            pairwise_vocab = self.__build_pairwise_vocab(self.vocab)
 
-            if not pairwise_vocab or pairwise_vocab[0][1] == 0:
+            if not pairwise_vocab or pairwise_vocab[0][1] <= 0:
                 print("No more pairs to merge or frequency is zero.")
                 break
 
-            vocab = self.replace_pairs_in_vocab(vocab, pairwise_vocab[0][0])
-            merge_rules[pairwise_vocab[0][0]] = "".join(pairwise_vocab[0][0])
+            most_frequent_pair = pairwise_vocab[0][0]
+            merged_token = "".join(most_frequent_pair)
+            self.merge_rules[most_frequent_pair] = merged_token
+            self.vocab = self.__replace_pairs_in_vocab(self.vocab, most_frequent_pair)
 
-        return vocab, merge_rules
+    def get_vocab(self) -> Dict[Tuple[str, ...], int]:
+        return self.vocab
+
+    def get_merge_rules(self) -> OrderedDict:
+        return self.merge_rules
