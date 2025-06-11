@@ -30,7 +30,6 @@ int Vocabulary::addToken(const std::string &token) {
   }
 
   token_frequency[token]++;
-
   int id = token_to_id[token];
 
   if (id_to_token[id] != token)  // Run a Sanity check
@@ -41,6 +40,32 @@ int Vocabulary::addToken(const std::string &token) {
   }
 
   return id;
+}
+
+/// @brief Get the ID of a token.
+/// @param token The token string.
+/// @return The ID of the token, or an invalid token ID if not found.
+int Vocabulary::getTokenID(const std::string &token) const {
+  auto it = token_to_id.find(token);
+  if (it != token_to_id.end()) {
+    // Run a Sanity check
+    if (it->second < 0 || it->second >= id_to_token.size()) {
+      throw std::runtime_error(
+          "[Vocabulary.cpp] [Vocabulary::getTokenID] Invalid token ID: " +
+          std::to_string(it->second));
+    }
+
+    // Or 2
+    if (id_to_token[it->second] != token)  // Run a Sanity check
+    {
+      throw std::runtime_error(
+          "[Vocabulary.cpp] [Vocabulary::getTokenID] ID mismatch for token: " +
+          token);
+    }
+
+    return it->second;
+  }
+  return utils::invalid_token_id;  // Invalid token ID
 }
 
 /// @brief Get the token string from its ID.
