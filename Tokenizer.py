@@ -1,4 +1,4 @@
-from collections import defaultdict
+from collections import defaultdict, OrderedDict
 
 # Special Tokens
 end_of_word = "</w>"
@@ -90,7 +90,7 @@ class Tokenizer:
         """
 
         new_vocab = defaultdict(int)
-        pair = pair_to_replace[0]
+        pair = pair_to_replace
         merged_token = "".join(pair)
 
         # print(f"Merging: {merged_token}")
@@ -123,7 +123,7 @@ class Tokenizer:
         """
 
         vocab = self.build_initial_vocab(data)
-        merge_rules = defaultdict(str)
+        merge_rules = OrderedDict()
 
         for _ in range(iter):
             pairwise_vocab = self.make_pairwise_vocab(vocab)
@@ -132,7 +132,7 @@ class Tokenizer:
                 print("No more pairs to merge or frequency is zero.")
                 break
 
-            vocab = self.replace_pairs_in_vocab(vocab, pairwise_vocab[0])
+            vocab = self.replace_pairs_in_vocab(vocab, pairwise_vocab[0][0])
             merge_rules[pairwise_vocab[0][0]] = "".join(pairwise_vocab[0][0])
 
         return vocab, merge_rules
