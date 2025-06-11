@@ -21,6 +21,11 @@ class Vocabulary {
   int addToken(const std::string &token);
   int getTokenID(const std::string &token) const;
   std::string getTokenFromID(int id) const;
-  void save(const std::string &path);
-  void load(const std::string &path);
+  void save(const std::string &path = "data/vocabulary.yaml");
+  void load(const std::string &path = "data/vocabulary.yaml");
+  void clear() {
+    token_to_id.clear();
+    id_to_token.clear();
+    token_frequency.clear();
+  }
 };
